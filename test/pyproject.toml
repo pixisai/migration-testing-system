@@ -1,0 +1,16 @@
+[tool.poetry]
+authors = ["Stanislav <slubovsky@cinimex.ru>"]
+description = ""
+name = "test-project"
+packages = [{include = "test_project"}]
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+SQLAlchemy = "^1.4.44"
+alembic = "^1.8.1"
+python = "^3.10"
+migration-testing-system = {path = ".."}
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
