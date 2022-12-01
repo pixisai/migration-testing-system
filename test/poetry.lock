@@ -35,14 +35,14 @@ nvim = ["neovim", "python-language-server"]
 
 [[package]]
 name = "boto3"
-version = "1.26.19"
+version = "1.26.20"
 description = "The AWS SDK for Python"
 category = "main"
 optional = false
 python-versions = ">= 3.7"
 
 [package.dependencies]
-botocore = ">=1.29.19,<1.30.0"
+botocore = ">=1.29.20,<1.30.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.6.0,<0.7.0"
 
@@ -51,7 +51,7 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.29.19"
+version = "1.29.20"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
 optional = false
@@ -129,19 +129,20 @@ version = "0.1.0"
 description = ""
 category = "main"
 optional = false
-python-versions = ">=3.10,<4.0"
+python-versions = "^3.10"
+develop = false
 
 [package.dependencies]
-alembic = ">=1.8.1,<2.0.0"
-alembic-utils = ">=0.7.8,<0.8.0"
-boto3 = ">=1.26.17,<2.0.0"
-psycopg2-binary = ">=2.9.5,<3.0.0"
-pydantic = ">=1.10.2,<2.0.0"
-SQLAlchemy = ">=1.4.44,<2.0.0"
+alembic = "^1.8.1"
+alembic-utils = "^0.7.8"
+boto3 = "^1.26.17"
+psycopg2-binary = "^2.9.5"
+pydantic = "^1.10.2"
+SQLAlchemy = "^1.4.44"
 
 [package.source]
-type = "file"
-url = "../dist/migration_testing_system-0.1.0-py3-none-any.whl"
+type = "directory"
+url = ".."
 
 [[package]]
 name = "parse"
@@ -263,7 +264,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "a51b0bdd626ed8cc7ca9235af20856ecbfe8f4ed09f10b2073b26ca845012435"
+content-hash = "7715172d4d3d4b2ea8754e448c1efe3bf1e07902348d1984603cf63a5126b29a"
 
 [metadata.files]
 alembic = [
@@ -274,12 +275,12 @@ alembic-utils = [
     {file = "alembic_utils-0.7.8.tar.gz", hash = "sha256:2abc54be70a79d57f7b9c4efcb4a99c0413c983ba0964ae0235492c8a0afee02"},
 ]
 boto3 = [
-    {file = "boto3-1.26.19-py3-none-any.whl", hash = "sha256:4b4edf893b01c651007d61534c1d248cd2350d311a4e295039bd23fd60bf899a"},
-    {file = "boto3-1.26.19.tar.gz", hash = "sha256:59aa6c7810a815fb52671f834d10ac4cd80b9c7c01a3cbde670cb41330059464"},
+    {file = "boto3-1.26.20-py3-none-any.whl", hash = "sha256:6b2e04ea415f375f607e6c633f7699e6a56bdc35c294116c5a6dc02da6aaa2ba"},
+    {file = "boto3-1.26.20.tar.gz", hash = "sha256:0d61243999adaddee22855ada1fdf7fe3d89cc95821e82f3b3a9dbe56c1589ba"},
 ]
 botocore = [
-    {file = "botocore-1.29.19-py3-none-any.whl", hash = "sha256:917807ee4ccca34a2f2848eb4fcf878d9e97a44a911a6965ff556d0830c471fd"},
-    {file = "botocore-1.29.19.tar.gz", hash = "sha256:a54561e591f5d8e653657ce04dcad09c10ebca9dbefba73471976e522abf038a"},
+    {file = "botocore-1.29.20-py3-none-any.whl", hash = "sha256:7c26cb870d0cae26349df2926a7bf6277c1326db6d42c650807a519d50a83786"},
+    {file = "botocore-1.29.20.tar.gz", hash = "sha256:806dab6358b0b44d7b283f133aadd26846f31fab12c97d348a1849b3b5a36c74"},
 ]
 flupy = [
     {file = "flupy-1.2.0.tar.gz", hash = "sha256:12487a008e9744cd35d0f6ea3cfa06f4b2b27cb138bf57d0788f5c26e57afe69"},
@@ -396,9 +397,7 @@ markupsafe = [
     {file = "MarkupSafe-2.1.1-cp39-cp39-win_amd64.whl", hash = "sha256:46d00d6cfecdde84d40e572d63735ef81423ad31184100411e6e3388d405e247"},
     {file = "MarkupSafe-2.1.1.tar.gz", hash = "sha256:7f91197cc9e48f989d12e4e6fbc46495c446636dfc81b9ccf50bb0ec74b91d4b"},
 ]
-migration-testing-system = [
-    {file = "migration_testing_system-0.1.0-py3-none-any.whl", hash = "sha256:74e83b0041d098be0efe0599c5eb1c6ebe526015d07c14f11966afb9d91d317d"},
-]
+migration-testing-system = []
 parse = [
     {file = "parse-1.19.0.tar.gz", hash = "sha256:9ff82852bcb65d139813e2a5197627a94966245c897796760a3a2a8eb66f020b"},
 ]
