@@ -35,14 +35,14 @@ nvim = ["neovim", "python-language-server"]
 
 [[package]]
 name = "boto3"
-version = "1.26.17"
+version = "1.26.20"
 description = "The AWS SDK for Python"
 category = "main"
 optional = false
 python-versions = ">= 3.7"
 
 [package.dependencies]
-botocore = ">=1.29.17,<1.30.0"
+botocore = ">=1.29.20,<1.30.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.6.0,<0.7.0"
 
@@ -51,7 +51,7 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.29.17"
+version = "1.29.20"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
 optional = false
@@ -63,7 +63,7 @@ python-dateutil = ">=2.1,<3.0.0"
 urllib3 = ">=1.25.4,<1.27"
 
 [package.extras]
-crt = ["awscrt (==0.14.0)"]
+crt = ["awscrt (==0.15.3)"]
 
 [[package]]
 name = "cfgv"
@@ -378,12 +378,12 @@ alembic-utils = [
     {file = "alembic_utils-0.7.8.tar.gz", hash = "sha256:2abc54be70a79d57f7b9c4efcb4a99c0413c983ba0964ae0235492c8a0afee02"},
 ]
 boto3 = [
-    {file = "boto3-1.26.17-py3-none-any.whl", hash = "sha256:c39b7e87b27b00dcf452b2fc80252d311e275036f3d48464af34d0123077f985"},
-    {file = "boto3-1.26.17.tar.gz", hash = "sha256:bb40a9788dd2234851cdd1110eec0e3f6b3af6b98280924fa44c25199ced5737"},
+    {file = "boto3-1.26.20-py3-none-any.whl", hash = "sha256:6b2e04ea415f375f607e6c633f7699e6a56bdc35c294116c5a6dc02da6aaa2ba"},
+    {file = "boto3-1.26.20.tar.gz", hash = "sha256:0d61243999adaddee22855ada1fdf7fe3d89cc95821e82f3b3a9dbe56c1589ba"},
 ]
 botocore = [
-    {file = "botocore-1.29.17-py3-none-any.whl", hash = "sha256:d4bab7d42acdb18effa33fee53d137b8b1bdedc2da196428a2d1e04a123778bc"},
-    {file = "botocore-1.29.17.tar.gz", hash = "sha256:4be7ca8c581dbc6e8584876c4347dcc4f4bc6aa6e6e8131901fc11816fc8151b"},
+    {file = "botocore-1.29.20-py3-none-any.whl", hash = "sha256:7c26cb870d0cae26349df2926a7bf6277c1326db6d42c650807a519d50a83786"},
+    {file = "botocore-1.29.20.tar.gz", hash = "sha256:806dab6358b0b44d7b283f133aadd26846f31fab12c97d348a1849b3b5a36c74"},
 ]
 cfgv = [
     {file = "cfgv-3.3.1-py2.py3-none-any.whl", hash = "sha256:c6a0883f3917a037485059700b9e75da2464e6c27051014ad85ba6aaa5884426"},
