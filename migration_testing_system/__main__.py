@@ -51,17 +51,9 @@ config.set_main_option("sqlalchemy.url", settings.settings.POSTGRES_DSN)
 script = ScriptDirectory.from_config(config)
 
 
-def get_current_revision():
-    engine = engine_from_config(
-        config.get_section(config.config_ini_section),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
-
-    with engine.connect() as connection:
-        context = MigrationContext.configure(connection)
-        current_rev = context.get_current_revision()
-        print(f"Current db rev: {current_rev}")
+def get_current_revision(context):
+    current_rev = context.get_current_revision()
+    print(f"Current db rev: {current_rev}")
     return current_rev
 
 
@@ -72,8 +64,9 @@ def step(revision):
         command.upgrade(config, revision.revision)"""
 
 
-def walk_revisions(from_revision):
+def walk_revisions(context):
     print("Preparing list of revisions for upgrade.")
+    from_revision = get_current_revision(context)
     revisions = list(script.walk_revisions(from_revision, "heads"))
     revisions.reverse()
 
@@ -84,8 +77,16 @@ def walk_revisions(from_revision):
             continue
         print(f"for script revision: {revision.revision}")
         rev_accum.append(revision)
-        for rev in rev_accum:
-            step(rev)
+        with context.begin_transaction():
+            for rev in rev_accum:
+                step(rev)
 
+engine = engine_from_config(
+        config.get_section(config.config_ini_section),
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
 
-walk_revisions(get_current_revision())
+with engine.connect() as connection:
+    context = MigrationContext.configure(connection)
+    walk_revisions(context)
