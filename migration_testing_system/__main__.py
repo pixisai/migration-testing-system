@@ -6,22 +6,47 @@ except ImportError:
 # Тут надо будет создать объект Config, который будет содержать настройки для alembic®
 # Предполагается что это будут параметризованные настройки, пользователь сможет сам настроить пути к папке миграций
 # Но можно установить дефолт на папку migrations
+
 from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
+from configargparse import ArgumentParser
 from sqlalchemy import engine_from_config, pool
-from test_project.models import metadata
 
-target_metadata = metadata
+from migration_testing_system.core import settings
+
+
+def init_settings():
+    print("Start initiating systems settings.")
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--MIGRATIONS_FOLDER",
+        type=str,
+        default=None,
+        help="path to migration scripts",
+        required=False,
+    )
+    args = parser.parse_args()
+
+    if args.MIGRATIONS_FOLDER:
+        settings.settings.MIGRATIONS_FOLDER = args.MIGRATIONS_FOLDER
+        print("Set field MIGRATIONS_FOLDER from commandline args.")
+    elif settings.settings.MIGRATIONS_FOLDER:
+        print("Set field MIGRATIONS_FOLDER from envirenment variables.")
+    else:
+        print("Field MIGRATIONS_FOLDER is not configured.")
+    print(f"MIGRATIONS_FOLDER = {settings.settings.MIGRATIONS_FOLDER}")
+    print("Set field POSTGRES_DSN from envirenment variables.")
+    print(f"POSTGRES_DSN = {settings.settings.POSTGRES_DSN}")
+
+
+init_settings()
+
+
 config = Config("alembic.ini")
 
-config.set_main_option(
-    "script_location",
-    "/Users/denis/Documents/dev/pixisai/migration-testing-system/test/alembic",
-)
-config.set_main_option(
-    "sqlalchemy.url", "postgresql+psycopg2://postgres:postgres@localhost:5432/postgres"
-)
+config.set_main_option("script_location", settings.settings.MIGRATIONS_FOLDER)
+config.set_main_option("sqlalchemy.url", settings.settings.POSTGRES_DSN)
 
 script = ScriptDirectory.from_config(config)
 
@@ -36,18 +61,19 @@ def get_current_revision():
     with engine.connect() as connection:
         context = MigrationContext.configure(connection)
         current_rev = context.get_current_revision()
-        print(f"current db rev: {current_rev}")
+        print(f"Current db rev: {current_rev}")
     return current_rev
 
 
 def step(revision):
-    print(f"step->:{revision}")
+    print(f"step->:{revision.revision}")
     """ command.upgrade(config, revision.revision)
         command.downgrade(config, revision.down_revision or '-1')
         command.upgrade(config, revision.revision)"""
 
 
 def walk_revisions(from_revision):
+    print("Preparing list of revisions for upgrade.")
     revisions = list(script.walk_revisions(from_revision, "heads"))
     revisions.reverse()
 
@@ -57,7 +83,7 @@ def walk_revisions(from_revision):
         if from_revision == revision.revision:
             continue
         print(f"for script revision: {revision.revision}")
-        rev_accum.append(revision.revision)
+        rev_accum.append(revision)
         for rev in rev_accum:
             step(rev)
 
