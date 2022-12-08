@@ -10,6 +10,8 @@ except ImportError:
 from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
+from alembic.command import upgrade, downgrade
+
 from configargparse import ArgumentParser
 from sqlalchemy import engine_from_config, pool
 
@@ -26,6 +28,13 @@ def init_settings():
         help="path to migration scripts",
         required=False,
     )
+    parser.add_argument(
+        "--POSTGRES_DSN",
+        type=str,
+        default=None,
+        help="postgres DSN",
+        required=False,
+    )
     args = parser.parse_args()
 
     if args.MIGRATIONS_FOLDER:
@@ -36,7 +45,15 @@ def init_settings():
     else:
         print("Field MIGRATIONS_FOLDER is not configured.")
     print(f"MIGRATIONS_FOLDER = {settings.settings.MIGRATIONS_FOLDER}")
-    print("Set field POSTGRES_DSN from envirenment variables.")
+
+    if args.POSTGRES_DSN:
+        settings.settings.POSTGRES_DSN = args.POSTGRES_DSN
+        print("Set field POSTGRES_DSN from commandline args.")
+    elif settings.settings.POSTGRES_DSN:
+        print("Set field POSTGRES_DSN from envirenment variables.")
+    else:
+        settings.settings.POSTGRES_DSN = "postgresql+psycopg2://postgres:postgres@localhost:5432/postgres"
+        print("Field POSTGRES_DSN is not configured. Set default value.")
     print(f"POSTGRES_DSN = {settings.settings.POSTGRES_DSN}")
 
 
@@ -56,36 +73,36 @@ def get_current_revision(context):
     print(f"Current db rev: {current_rev}")
     return current_rev
 
-
-def step(revision):
-    print(f"step->:{revision.revision}")
-    """ command.upgrade(config, revision.revision)
-        command.downgrade(config, revision.down_revision or '-1')
-        command.upgrade(config, revision.revision)"""
+def incremental_testing(context, from_revision, revisions):
+    print("Incremental testing scripts.")
+    print(revisions)
+    for revision in revisions:
+        if from_revision == revision.revision: continue
+        print(f"For revision: {revision.revision}")
+        with context.begin_transaction():
+            upgrade(config, revision.revision)
+            downgrade(config, "-1")
+    print("Finished incremental test.")
 
 
 def walk_revisions(context):
-    print("Preparing list of revisions for upgrade.")
     from_revision = get_current_revision(context)
     revisions = list(script.walk_revisions(from_revision, "heads"))
+    last_rev = revisions[0]
     revisions.reverse()
 
-    rev_accum = list()
+    incremental_testing(context, from_revision, revisions)
+    print("downgrade to from_revision")
+    downgrade(config, from_revision or "base")
+    print("upgrade to last_revision")
+    upgrade(config, last_rev.revision)
 
-    for revision in revisions:
-        if from_revision == revision.revision:
-            continue
-        print(f"for script revision: {revision.revision}")
-        rev_accum.append(revision)
-        with context.begin_transaction():
-            for rev in rev_accum:
-                step(rev)
 
 engine = engine_from_config(
-        config.get_section(config.config_ini_section),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    config.get_section(config.config_ini_section),
+    prefix="sqlalchemy.",
+    poolclass=pool.NullPool,
+)
 
 with engine.connect() as connection:
     context = MigrationContext.configure(connection)

@@ -11,6 +11,9 @@ services:
       POSTGRES_DB: postgres
     ports:
       - 5432:5432
-    volumes:
-      - ./postgres:/var/lib/postgresql/data
-    user: root
+    user: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready --host=localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
