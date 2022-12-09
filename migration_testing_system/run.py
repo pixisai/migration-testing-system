@@ -1,5 +1,5 @@
 import os
-from typing import Callable, List
+from typing import List
 
 from alembic.command import downgrade, upgrade
 from alembic.config import Config
@@ -62,13 +62,10 @@ def _walk_revisions(
     _incremental_testing(config, context, from_revision, revisions)
 
 
-def _run_testing(settings: Settings, logging_callback: Callable = None):
+def _run_testing(settings: Settings):
     engine = create_engine(settings.postgres_dsn)
     config = _get_config(settings)
     script_directory = _get_script_directory(config)
-
-    if logging_callback:
-        logging_callback()
 
     with engine.connect() as connection:
         context = MigrationContext.configure(connection)
@@ -85,7 +82,6 @@ def run_testing(
     migrations_folder: str = "alembic",
     branch: str = "",
     log_level: str = "INFO",
-    logging_callback: Callable = None,
 ):
     settings = Settings(
         postgres_dsn=postgres_dsn,
@@ -93,4 +89,4 @@ def run_testing(
         branch=branch,
         log_level=log_level,
     )
-    _run_testing(settings, logging_callback=logging_callback)
+    _run_testing(settings)
