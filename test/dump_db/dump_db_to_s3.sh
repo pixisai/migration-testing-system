@@ -11,7 +11,7 @@ pg_dump \
     --host=$DB_HOST \
     --port=$DB_PORT \
     --username=$DB_USER \
-    --dbname=$DB_NAME > $DB_DUMP_NAME 
+    --dbname=$DB_NAME > $DB_DUMP_NAME
 
 
 aws s3api put-object \

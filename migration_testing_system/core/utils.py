@@ -1,6 +1,6 @@
 import subprocess
-import boto3
 
+import boto3
 
 """
 Example script for splitting argumets for subbrocess.
@@ -47,9 +47,37 @@ docker-compose down --volumes
 
 """
 
-def download_file_from_s3(s3_bucket = 'optimization-engine-migration-testing-system', s3_key='db_dump.sql', path_to_dest_file='db_dump_from_s3.sql'):
-    s3 = boto3.resource('s3')
+
+def download_file_from_s3(
+    s3_bucket="optimization-engine-migration-testing-system",
+    s3_key="db_dump.sql",
+    path_to_dest_file="db_dump_from_s3.sql",
+):
+    s3 = boto3.resource("s3")
     s3.Bucket(s3_bucket).download_file(key=s3_key, Filename=path_to_dest_file)
 
-def restore_db_from_dump(path_to_dump_file, db_host='localhost', db_port='5432', user_name='postgres', db_name='postgres'):
-    subprocess.run(['psql', '--host', db_host, '--port', db_port, '--username', user_name, '--dbname', db_name, '-q', '-f', path_to_dump_file], capture_output=True)
+
+def restore_db_from_dump(
+    path_to_dump_file,
+    db_host="localhost",
+    db_port="5432",
+    user_name="postgres",
+    db_name="postgres",
+):
+    subprocess.run(
+        [
+            "psql",
+            "--host",
+            db_host,
+            "--port",
+            db_port,
+            "--username",
+            user_name,
+            "--dbname",
+            db_name,
+            "-q",
+            "-f",
+            path_to_dump_file,
+        ],
+        capture_output=True,
+    )

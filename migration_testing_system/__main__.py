@@ -7,12 +7,10 @@ except ImportError:
 # Предполагается что это будут параметризованные настройки, пользователь сможет сам настроить пути к папке миграций
 # Но можно установить дефолт на папку migrations
 
+from alembic.command import downgrade, upgrade
 from alembic.config import Config
 from alembic.migration import MigrationContext
-
 from alembic.script import ScriptDirectory
-from alembic.command import upgrade, downgrade
-
 from configargparse import ArgumentParser
 from sqlalchemy import engine_from_config, pool
 
@@ -53,7 +51,9 @@ def init_settings():
     elif settings.settings.POSTGRES_DSN:
         print("Set field POSTGRES_DSN from envirenment variables.")
     else:
-        settings.settings.POSTGRES_DSN = "postgresql+psycopg2://postgres:postgres@localhost:5432/postgres"
+        settings.settings.POSTGRES_DSN = (
+            "postgresql+psycopg2://postgres:postgres@localhost:5432/postgres"
+        )
         print("Field POSTGRES_DSN is not configured. Set default value.")
     print(f"POSTGRES_DSN = {settings.settings.POSTGRES_DSN}")
 
@@ -74,11 +74,13 @@ def get_current_revision(context):
     print(f"Current db rev: {current_rev}")
     return current_rev
 
+
 def incremental_testing(context, from_revision, revisions):
     print("Incremental testing scripts.")
     print(revisions)
     for revision in revisions:
-        if from_revision == revision.revision: continue
+        if from_revision == revision.revision:
+            continue
         print(f"For revision: {revision.revision}")
         with context.begin_transaction():
             upgrade(config, revision.revision)
@@ -89,10 +91,11 @@ def incremental_testing(context, from_revision, revisions):
 def walk_revisions(context):
     from_revision = get_current_revision(context)
     revisions = list(script.walk_revisions(from_revision, "heads"))
-    last_rev = revisions[0]
+    revisions[0]
     revisions.reverse()
 
     incremental_testing(context, from_revision, revisions)
+
 
 engine = engine_from_config(
     config.get_section(config.config_ini_section),
