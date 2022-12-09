@@ -23,7 +23,7 @@ def upgrade() -> None:
         sa.Column("pnone", sa.String(length=10), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.add_column("user_12", sa.Column("phone_id", sa.Integer(), nullable=True))
+    op.add_column("user", sa.Column("phone_id", sa.Integer(), nullable=True))
     # ### end Alembic commands ###
 
 
