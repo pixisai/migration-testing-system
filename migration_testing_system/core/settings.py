@@ -1,11 +1,24 @@
 from typing import Optional
 
-from pydantic import BaseSettings
+from pydantic import BaseModel, BaseSettings, PostgresDsn
 
 
-class Settings(BaseSettings):
-    POSTGRES_DSN: Optional[str] = None
-    MIGRATIONS_FOLDER: Optional[str] = None
+class EnvSettings(BaseSettings):
+    postgres_dsn: Optional[PostgresDsn] = None
+
+    migrations_folder: Optional[str] = None
+    branch: Optional[str] = None
+
+    log_level: str = "INFO"
 
 
-settings = Settings()
+env_settings = EnvSettings()
+
+
+class Settings(BaseModel):
+    postgres_dsn: PostgresDsn
+
+    migrations_folder: Optional[str]
+    branch: Optional[str]
+
+    log_level: str

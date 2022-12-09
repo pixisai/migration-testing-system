@@ -1,6 +1,6 @@
 """First auto gen
 
-Revision ID: 4da06cae3a24
+Revision ID: 1
 Revises:
 Create Date: 2022-12-02 11:21:44.407525
 
@@ -9,9 +9,9 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "4da06cae3a24"
+revision = "1"
 down_revision = None
-branch_labels = None
+branch_labels = "versions_invalid"
 depends_on = None
 
 
