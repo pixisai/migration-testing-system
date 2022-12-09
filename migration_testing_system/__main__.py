@@ -9,6 +9,7 @@ except ImportError:
 
 from alembic.config import Config
 from alembic.migration import MigrationContext
+
 from alembic.script import ScriptDirectory
 from alembic.command import upgrade, downgrade
 
@@ -92,11 +93,6 @@ def walk_revisions(context):
     revisions.reverse()
 
     incremental_testing(context, from_revision, revisions)
-    print("downgrade to from_revision")
-    downgrade(config, from_revision or "base")
-    print("upgrade to last_revision")
-    upgrade(config, last_rev.revision)
-
 
 engine = engine_from_config(
     config.get_section(config.config_ini_section),

@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "621337e4bcd7"
-down_revision = "4da06cae3a24"
+down_revision = "5e38e5884329"
 branch_labels = None
 depends_on = None
 
@@ -23,7 +23,7 @@ def upgrade() -> None:
         sa.Column("pnone", sa.String(length=10), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.add_column("user", sa.Column("phone_id", sa.Integer(), nullable=True))
+    op.add_column("user_12", sa.Column("phone_id", sa.Integer(), nullable=True))
     # ### end Alembic commands ###
 
 
