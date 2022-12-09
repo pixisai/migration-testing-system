@@ -11,6 +11,8 @@ class EnvSettings(BaseSettings):
 
     log_level: str = "INFO"
 
+    dump_file: str = "dump.sql"
+
 
 env_settings = EnvSettings()
 
@@ -22,3 +24,5 @@ class Settings(BaseModel):
     branch: Optional[str]
 
     log_level: str
+
+    dump_file: str

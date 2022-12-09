@@ -8,6 +8,10 @@ from alembic.script import Script, ScriptDirectory
 from sqlalchemy import create_engine
 
 from migration_testing_system.core.settings import Settings
+from migration_testing_system.core.utils import (
+    download_file_from_s3,
+    restore_db_from_dump,
+)
 
 
 def _get_config(settings: Settings) -> Config:
@@ -64,6 +68,20 @@ def _walk_revisions(
 
 def _run_testing(settings: Settings):
     engine = create_engine(settings.postgres_dsn)
+
+    if settings.dump_file.startswith("s3://"):
+        dump_filename = "dump.sql"
+
+        download_file_from_s3(
+            *settings.dump_file[5:].split("/", maxsplit=1), dest_file=dump_filename
+        )
+        settings.dump_file = dump_filename
+
+    elif settings.dump_file.startswith("file://"):
+        settings.dump_file = settings.dump_file[7:]
+
+    restore_db_from_dump(settings.dump_file, engine)
+
     config = _get_config(settings)
     script_directory = _get_script_directory(config)
 
@@ -82,11 +100,13 @@ def run_testing(
     migrations_folder: str = "alembic",
     branch: str = "",
     log_level: str = "INFO",
+    dump_file: str = "file://dump.sql",
 ):
     settings = Settings(
         postgres_dsn=postgres_dsn,
         migrations_folder=migrations_folder,
         branch=branch,
         log_level=log_level,
+        dump_file=dump_file,
     )
     _run_testing(settings)

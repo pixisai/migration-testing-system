@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:13.2
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - 5432:5432
+    user: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready --host=localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

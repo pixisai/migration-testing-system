@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     postgres_dsn: Optional[str] = None
 
     container_name: str = "test_postgres"
+    dump_file: str = "file://dump.sql"
 
     @validator("postgres_dsn", pre=False)
     def build_postgres_dsn(cls, v, values):
@@ -81,8 +82,8 @@ def valid_case():
     startup_postgres()
     run_testing(
         settings.postgres_dsn,
-        migrations_folder="alembic",
         branch="versions_valid",
+        dump_file=settings.dump_file,
     )
     shutdown_postgres()
 
@@ -92,8 +93,8 @@ def invalid_case():
     try:
         run_testing(
             settings.postgres_dsn,
-            migrations_folder="alembic",
             branch="versions_invalid",
+            dump_file=settings.dump_file,
         )
     except Exception as e:
         print(e)

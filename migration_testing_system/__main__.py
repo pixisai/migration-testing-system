@@ -26,24 +26,30 @@ def parse_args(prog: str) -> Settings:
         "-f",
         "--migrations-folder",
         type=str,
-        help="path to migration scripts",
+        help="Path to migration scripts",
     )
     parser.add_argument(
         "-d",
         "--postgres-dsn",
         type=str,
-        help="postgres DSN",
+        help="Postgres DSN",
     )
     parser.add_argument(
         "--log-level",
         type=str,
-        help="set log level",
+        help="Logging level",
     )
     parser.add_argument(
         "-b",
         "--branch",
         type=str,
-        help="postgres DSN",
+        help="Migrations brach to test",
+    )
+    parser.add_argument(
+        "-F",
+        "--dump-file",
+        type=str,
+        help="Dump file. Use s3:// prefix to download from S3 or file:// in local file system.",
     )
 
     namespace = parser.parse_args()
