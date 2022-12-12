@@ -37,7 +37,7 @@ class Settings(BaseSettings):
 settings = Settings()
 
 
-def startup_postgres() -> None:
+def startup_postgres(settings) -> None:
     logging.info("Starting postgres container")
 
     client = docker.from_env()
@@ -45,7 +45,7 @@ def startup_postgres() -> None:
         "postgres:13.4-alpine",
         auto_remove=True,
         detach=True,
-        ports={"5432": 5432},
+        ports={"5432": settings.postgres_port},
         environment={
             "POSTGRES_PASSWORD": settings.postgres_password,
             "POSTGRES_USER": settings.postgres_user,
@@ -62,34 +62,34 @@ def startup_postgres() -> None:
     logging.info("Postgres container started")
 
 
-def check_postgres() -> bool:
+def check_postgres(container_name) -> bool:
     client = docker.from_env()
-    container = client.containers.get(settings.container_name)
+    container = client.containers.get(container_name)
     return container.status == "running"
 
 
-def shutdown_postgres() -> None:
+def shutdown_postgres(container_name) -> None:
     logging.info("Shutting down postgres container")
     client = docker.from_env()
     try:
-        client.containers.get(settings.container_name).stop()
+        client.containers.get(container_name).stop()
     except docker.errors.NotFound:
         pass
     logging.info("Postgres container stopped")
 
 
 def valid_case():
-    startup_postgres()
+    startup_postgres(settings)
     run_testing(
         settings.postgres_dsn,
         branch="versions_valid",
         dump_file=settings.dump_file,
     )
-    shutdown_postgres()
+    shutdown_postgres(settings.container_name)
 
 
 def invalid_case():
-    startup_postgres()
+    startup_postgres(settings)
     try:
         run_testing(
             settings.postgres_dsn,
@@ -99,7 +99,29 @@ def invalid_case():
     except Exception as e:
         print(e)
 
-    shutdown_postgres()
+    shutdown_postgres(settings.container_name)
+
+
+def copy_settings(settings):
+    settings_ref_db = settings.copy()
+    settings_ref_db.postgres_port = settings_ref_db.postgres_port + 1
+    settings_ref_db.postgres_dsn = None
+
+
+def run_schema_drift_testing():
+    pass
+
+
+def schema_drift_case():
+    """Copy setting for create refernece db."""
+    settings_ref_db = copy_settings(settings)
+    startup_postgres(settings)
+    startup_postgres(settings_ref_db)
+
+    run_schema_drift_testing()
+
+    shutdown_postgres(settings.container_name)
+    shutdown_postgres(settings_ref_db.container_name)
 
 
 def run_test_cases():
@@ -112,8 +134,8 @@ def run_test_cases():
         except Exception as e:
             logging.error(f"Case {case.__name__} failed with error: {e}")
 
-            if check_postgres():
-                shutdown_postgres()
+            if check_postgres(settings.container_name):
+                shutdown_postgres(settings.container_name)
 
             exit(1)
 
