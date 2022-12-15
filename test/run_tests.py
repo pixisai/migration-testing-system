@@ -10,7 +10,7 @@ from migration_testing_system.run import run_testing
 
 class Settings(BaseSettings):
     postgres_host: str = "localhost"
-    postgres_port: int = 5432
+    postgres_port: str = "5432"
     postgres_user: str = "postgres"
     postgres_password: str = "postgres"
     postgres_db: str = "postgres"
@@ -30,6 +30,7 @@ class Settings(BaseSettings):
             user=values.get("postgres_user"),
             password=values.get("postgres_password"),
             host=values.get("postgres_host"),
+            port=values.get("postgres_port"),
             path=f"/{values.get('postgres_db')}",
         )
 
@@ -37,7 +38,7 @@ class Settings(BaseSettings):
 settings = Settings()
 
 
-def startup_postgres(settings) -> None:
+def startup_postgres() -> None:
     logging.info("Starting postgres container")
 
     client = docker.from_env()
@@ -62,34 +63,34 @@ def startup_postgres(settings) -> None:
     logging.info("Postgres container started")
 
 
-def check_postgres(container_name) -> bool:
+def check_postgres() -> bool:
     client = docker.from_env()
-    container = client.containers.get(container_name)
+    container = client.containers.get(settings.container_name)
     return container.status == "running"
 
 
-def shutdown_postgres(container_name) -> None:
+def shutdown_postgres() -> None:
     logging.info("Shutting down postgres container")
     client = docker.from_env()
     try:
-        client.containers.get(container_name).stop()
+        client.containers.get(settings.container_name).stop()
     except docker.errors.NotFound:
         pass
     logging.info("Postgres container stopped")
 
 
 def valid_case():
-    startup_postgres(settings)
+    startup_postgres()
     run_testing(
         settings.postgres_dsn,
         branch="versions_valid",
         dump_file=settings.dump_file,
     )
-    shutdown_postgres(settings.container_name)
+    shutdown_postgres()
 
 
 def invalid_case():
-    startup_postgres(settings)
+    startup_postgres()
     try:
         run_testing(
             settings.postgres_dsn,
@@ -99,33 +100,22 @@ def invalid_case():
     except Exception as e:
         print(e)
 
-    shutdown_postgres(settings.container_name)
-
-
-def copy_settings(settings):
-    settings_ref_db = settings.copy()
-    settings_ref_db.postgres_port = settings_ref_db.postgres_port + 1
-    settings_ref_db.postgres_dsn = None
-
-
-def run_schema_drift_testing():
-    pass
+    shutdown_postgres()
 
 
 def schema_drift_case():
-    """Copy setting for create refernece db."""
-    settings_ref_db = copy_settings(settings)
-    startup_postgres(settings)
-    startup_postgres(settings_ref_db)
-
-    run_schema_drift_testing()
-
-    shutdown_postgres(settings.container_name)
-    shutdown_postgres(settings_ref_db.container_name)
+    startup_postgres()
+    run_testing(
+        settings.postgres_dsn,
+        check_schema_drift=True,
+        branch="versions_schema_drift",
+        dump_file=settings.dump_file,
+    )
+    shutdown_postgres()
 
 
 def run_test_cases():
-    cases = [valid_case, invalid_case]
+    cases = [valid_case, invalid_case, schema_drift_case]
     for case in cases:
         try:
             logging.info(f"Running case {case.__name__}")
@@ -134,8 +124,8 @@ def run_test_cases():
         except Exception as e:
             logging.error(f"Case {case.__name__} failed with error: {e}")
 
-            if check_postgres(settings.container_name):
-                shutdown_postgres(settings.container_name)
+            if check_postgres():
+                shutdown_postgres()
 
             exit(1)
 

@@ -26,6 +26,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_column("user", "phone_id")
-    op.drop_table("car")
+    op.drop_column("car", "model")
+    # op.drop_table(table_name="car")
     # ### end Alembic commands ###

@@ -15,7 +15,7 @@ pydantic = "^1.10.2"
 python = "^3.10"
 configargparse = "^1.5.3"
 sqlalchemy-diff="^0.1.0"
-
+sqlalchemy_utils="^0.38.3"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^2.20.0"
