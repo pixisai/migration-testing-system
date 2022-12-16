@@ -1,4 +1,5 @@
 import boto3
+from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
 
@@ -8,16 +9,13 @@ def download_file_from_s3(s3_bucket: str, s3_key: str, dest_file="dump.sql"):
 
 
 def restore_db_from_dump(path_to_dump_file: str, engine: Engine) -> None:
-    with engine.connect() as conn:
+    with engine.begin() as conn:
         with open(path_to_dump_file, "r") as f:
             conn.execute(f.read())
 
 
-# def restore_db_from_dump(db_host :str, db_port :str, db_username:str, db_name: str, dunmp_file: str) -> None:
-#    os.system(f"psql --host {db_host} --port {db_port} --username {db_username} --dbname {db_name} -q -f {dunmp_file}")
-
-
-def restore_db(path_to_file: str, engine: Engine) -> None:
+def restore_db(pg_dsn: str, path_to_file: str) -> None:
+    engine: Engine = create_engine(pg_dsn)
     """ """
     if path_to_file.startswith("s3://"):
         dump_filename = "dump.sql"

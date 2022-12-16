@@ -14,6 +14,7 @@ from sqlalchemy_utils import create_database, drop_database
 from sqlalchemydiff import compare
 
 from migration_testing_system.core.settings import Settings
+from migration_testing_system.core.utils import restore_db
 
 
 def _get_config(settings: Settings) -> Config:
@@ -77,6 +78,8 @@ def tmp_database(settings: Settings):
 
 
 def _run_testing(settings: Settings, check_schema_drift: bool = False):
+    restore_db(settings.postgres_dsn, settings.dump_file)
+
     if check_schema_drift:
         logging.info("schema drift testitng")
         with tmp_database(settings) as tmp_dsn:
@@ -84,7 +87,7 @@ def _run_testing(settings: Settings, check_schema_drift: bool = False):
             result = compare(str(settings.postgres_dsn), tmp_dsn)
             logging.info(f"compare result.is_match = {result.is_match:} ")
             if not result.is_match:
-                logging.error(f"{result.errors}")
+                logging.info(f"Result not match. {result.errors}")
     else:
         _migration_testing(settings)
 
