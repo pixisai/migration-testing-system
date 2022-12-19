@@ -107,7 +107,6 @@ def schema_drift_case():
     startup_postgres()
     run_testing(
         settings.postgres_dsn,
-        check_schema_drift=True,
         branch="versions_schema_drift",
         dump_file=settings.dump_file,
     )

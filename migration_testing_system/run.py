@@ -17,15 +17,15 @@ from migration_testing_system.core.settings import Settings
 from migration_testing_system.core.utils import restore_db
 
 
-def _get_config(settings: Settings) -> Config:
+def _get_config(migrations_folder: str) -> Config:
     alembic_ini_path = None
     if os.path.exists("alembic.ini"):
         alembic_ini_path = "alembic.ini"
 
     config = Config(alembic_ini_path)
 
-    if settings.migrations_folder is not None:
-        config.set_main_option("script_location", settings.migrations_folder)
+    if migrations_folder is not None:
+        config.set_main_option("script_location", migrations_folder)
 
     return config
 
@@ -36,30 +36,37 @@ def _get_script_directory(config: Config) -> ScriptDirectory:
     return script_directory
 
 
-def _incremental_testing(
-    config: Config,
-    context: MigrationContext,
-    from_revision: str,
-    revisions: List[Script],
+def _test_revision(
+    settings: Settings,
+    revision: Script,
+    tmp_dsn: str,
 ):
-    for revision in revisions:
-        if from_revision == revision.revision:
-            continue
-
+    with with_context(settings.postgres_dsn, settings.migrations_folder) as (context, script_directory, config): 
         with context.begin_transaction():
             upgrade(config, revision.revision)
             downgrade(config, "-1")
+            result =  compare(settings.postgres_dsn, tmp_dsn) 
+            logging.info(f"compare result.is_match = {result.is_match:} ")
+            if not result.is_match:
+                logging.info(f"Result not match. {result.errors}")
+    """ upgrade tmp databse """
+    with with_context(tmp_dsn, settings.migrations_folder) as (context_tmp, script_directory_tmp, config_tmp):
+        with context_tmp.begin_transaction():
+            upgrade(config_tmp, revision.revision)
 
 
 def _get_revisions(
-    branch: str,
-    from_revision,
-    script_directory: ScriptDirectory,
+    settings: Settings
 ):
-    branch_head = f"{branch}@head" if branch else "head"
+    branch = settings.branch
+    
+    with with_context(settings.postgres_dsn, settings.migrations_folder) as (context, script_directory, config): 
+        from_revision = context.get_current_revision()
 
-    revisions = list(script_directory.walk_revisions(from_revision, branch_head))
-    revisions.reverse()
+        branch_head = f"{branch}@head" if branch else "head"
+
+        revisions = list(filter(lambda rev: from_revision != rev.revision, script_directory.walk_revisions(from_revision, branch_head)))
+        revisions.reverse()
     return revisions
 
 
@@ -67,7 +74,6 @@ def _get_revisions(
 def tmp_database(settings: Settings):
     pg_dsn: PostgresDsn = settings.postgres_dsn
     tmp_dsn: str = "_".join([str(pg_dsn), uuid.uuid4().hex])
-
     create_database(tmp_dsn, template=get_db_name(pg_dsn))
     logging.info(f"created template database:'{tmp_dsn}'")
     try:
@@ -76,42 +82,32 @@ def tmp_database(settings: Settings):
         drop_database(tmp_dsn)
         logging.info(f"drop database:'{tmp_dsn}'")
 
+@contextmanager
+def with_context(pg_dsn: str, migrations_folder: str):
+    engine = create_engine(pg_dsn)
 
-def _run_testing(settings: Settings, check_schema_drift: bool = False):
-    restore_db(settings.postgres_dsn, settings.dump_file)
-
-    if check_schema_drift:
-        logging.info("schema drift testitng")
-        with tmp_database(settings) as tmp_dsn:
-            _migration_testing(settings)
-            result = compare(str(settings.postgres_dsn), tmp_dsn)
-            logging.info(f"compare result.is_match = {result.is_match:} ")
-            if not result.is_match:
-                logging.info(f"Result not match. {result.errors}")
-    else:
-        _migration_testing(settings)
-
-
-def _migration_testing(settings: Settings):
-    engine = create_engine(settings.postgres_dsn)
-
-    config = _get_config(settings)
+    config = _get_config(migrations_folder)
     script_directory = _get_script_directory(config)
 
-    with engine.connect() as connection:
-        context = MigrationContext.configure(connection)
-        from_revision = context.get_current_revision()
+    connection = engine.connect()
+    context = MigrationContext.configure(connection)
 
-        revisions = _get_revisions(
-            settings.branch,
-            from_revision,
-            script_directory,
-        )
+    try:
+        yield context, script_directory, config
+    finally:
+        connection.close()
+        engine.dispose()
+        logging.info(f"engine dosposed---")
 
-        _incremental_testing(config, context, from_revision, revisions)
-        downgrade(config, from_revision)
+def _run_testing(settings: Settings):
+    restore_db(settings.postgres_dsn, settings.dump_file)
 
+    revisions = _get_revisions(settings)
+    with tmp_database(settings) as tmp_dsn: 
+        for revision in revisions:
+            _test_revision(settings, revision, tmp_dsn)
 
+        
 def get_db_name(pg_dsn: PostgresDsn):
     """get db name fom dsn"""
     db_name = pg_dsn.path
@@ -119,10 +115,8 @@ def get_db_name(pg_dsn: PostgresDsn):
         db_name = db_name[1:]
     return db_name
 
-
 def run_testing(
     postgres_dsn: str,
-    check_schema_drift: bool = False,
     migrations_folder: str = "alembic",
     branch: str = "",
     log_level: str = "INFO",
@@ -135,4 +129,4 @@ def run_testing(
         log_level=log_level,
         dump_file=dump_file,
     )
-    _run_testing(settings, check_schema_drift)
+    _run_testing(settings)

@@ -29,3 +29,4 @@ def restore_db(pg_dsn: str, path_to_file: str) -> None:
         path_to_file = path_to_file[7:]
 
     restore_db_from_dump(path_to_file, engine)
+    engine.dispose()
