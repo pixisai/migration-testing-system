@@ -1,3 +1,8 @@
+import os
+import shutil
+from datetime import datetime
+from os.path import exists
+
 import boto3
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
@@ -30,3 +35,18 @@ def restore_db(pg_dsn: str, path_to_file: str) -> None:
 
     restore_db_from_dump(path_to_file, engine)
     engine.dispose()
+
+
+def make_new_file_name(file_name):
+    filename, file_extension = os.path.splitext(file_name)
+    now = datetime.now()
+    timestamp = str(now.strftime("%Y%m%d_%H-%M-%S"))
+    return filename + "_" + timestamp + file_extension
+
+
+def dump_db(pg_url: str, dump_file: str):
+    if exists(dump_file):
+        shutil.move(dump_file, make_new_file_name(dump_file))
+    os.system(
+        f"pg_dump {pg_url} --schema='public' --schema='optimization' --exclude-table-data='optimization.*' > {dump_file}"
+    )
