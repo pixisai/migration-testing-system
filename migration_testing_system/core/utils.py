@@ -19,9 +19,9 @@ def restore_db_from_dump(path_to_dump_file: str, engine: Engine) -> None:
             conn.execute(f.read())
 
 
-def restore_db(pg_dsn: str, path_to_file: str) -> None:
-    engine: Engine = create_engine(pg_dsn)
-    """ """
+def restore_db(sqlalchemy_uri: str, path_to_file: str) -> None:
+    engine = create_engine(sqlalchemy_uri)
+
     if path_to_file.startswith("s3://"):
         dump_filename = "dump.sql"
 

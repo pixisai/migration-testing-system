@@ -7,7 +7,6 @@ from alembic.command import downgrade, upgrade
 from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.script import Script, ScriptDirectory
-from pydantic import PostgresDsn
 from sqlalchemy import create_engine
 from sqlalchemy_utils import create_database, drop_database
 from sqlalchemydiff import compare
@@ -47,23 +46,23 @@ def _test_revision(
     revision: Script,
     tmp_dsn: str,
 ):
-    config = _get_config(settings.postgres_dsn, settings.migrations_folder)
+    config = _get_config(settings.POSTGRES_URI, settings.MIGRATIONS_FOLDER)
     upgrade(config, revision.revision)
     downgrade(config, "-1")
-    result = compare(settings.postgres_dsn, tmp_dsn)
+    result = compare(settings.POSTGRES_URI, tmp_dsn)
     logging.info(f"compare result.is_match = {result.is_match:} ")
     if not result.is_match:
         logging.info(f"Result not match. {result.errors}")
 
 
 def _get_revisions(settings: Settings):
-    branch = settings.branch
+    branch = settings.BRANCH
     branch_head = f"{branch}@head" if branch else "head"
 
-    from_revision = _get_current_revision(settings.postgres_dsn)
+    from_revision = _get_current_revision(settings.POSTGRES_URI)
 
     script_directory = _get_script_directory(
-        _get_config(settings.postgres_dsn, settings.migrations_folder)
+        _get_config(settings.POSTGRES_URI, settings.MIGRATIONS_FOLDER)
     )
 
     revisions = list(
@@ -79,15 +78,15 @@ def _get_revisions(settings: Settings):
 
 @contextmanager
 def tmp_database(settings: Settings):
-    pg_dsn: PostgresDsn = settings.postgres_dsn
-    tmp_dsn: str = "_".join([str(pg_dsn), uuid.uuid4().hex])
-    create_database(tmp_dsn, template=get_db_name(pg_dsn))
-    logging.info(f"created template database:'{tmp_dsn}'")
+    sqlalchemy_uri = settings.POSTGRES_URI
+    tmp_uri: str = "_".join([str(sqlalchemy_uri), uuid.uuid4().hex])
+    create_database(tmp_uri, template=get_db_name(sqlalchemy_uri))
+    logging.info(f"created template database:'{tmp_uri}'")
     try:
-        yield tmp_dsn
+        yield tmp_uri
     finally:
-        drop_database(tmp_dsn)
-        logging.info(f"drop database:'{tmp_dsn}'")
+        drop_database(tmp_uri)
+        logging.info(f"drop database:'{tmp_uri}'")
 
 
 def prepare_postgres_template(tmp_dsn, migrations_folder, revision):
@@ -110,38 +109,36 @@ def with_context(pg_dsn: str):
 
 
 def _run_testing(settings: Settings):
-    restore_db(settings.postgres_dsn, settings.dump_file)
+    restore_db(settings.POSTGRES_URI, settings.DUMP_FILE)
 
     revisions = _get_revisions(settings)
     tmp_rev = None
 
     with tmp_database(settings) as tmp_dsn:
         for revision in revisions:
-            prepare_postgres_template(tmp_dsn, settings.migrations_folder, tmp_rev)
+            prepare_postgres_template(tmp_dsn, settings.MIGRATIONS_FOLDER, tmp_rev)
             tmp_rev = revision.revision
             _test_revision(settings, revision, tmp_dsn)
 
 
-def get_db_name(pg_dsn: PostgresDsn):
-    """get db name fom dsn"""
-    db_name = pg_dsn.path
-    if db_name[0] == "/":
-        db_name = db_name[1:]
-    return db_name
+def get_db_name(db_uri: str) -> str:
+    return db_uri.split("/")[-1]
 
 
 def run_testing(
-    postgres_dsn: str,
+    postgres_uri: str,
     migrations_folder: str = "alembic",
     branch: str = "",
+    db_schema: str = "public",
     log_level: str = "INFO",
     dump_file: str = "file://dump.sql",
 ):
     settings = Settings(
-        postgres_dsn=postgres_dsn,
-        branch=branch,
-        migrations_folder=migrations_folder,
-        log_level=log_level,
-        dump_file=dump_file,
+        POSTGRES_URI=postgres_uri,
+        BRANCH=branch,
+        MIGRATIONS_FOLDER=migrations_folder,
+        LOG_LEVEL=log_level,
+        DUMP_FILE=dump_file,
+        DB_SCHEMA=db_schema,
     )
     _run_testing(settings)
