@@ -16,7 +16,7 @@ from migration_testing_system.core.settings import Settings
 from migration_testing_system.core.utils import restore_db
 
 
-def _get_config(migrations_folder: str) -> Config:
+def _get_config(pg_url: str, migrations_folder: str) -> Config:
     alembic_ini_path = None
     if os.path.exists("alembic.ini"):
         alembic_ini_path = "alembic.ini"
@@ -25,6 +25,8 @@ def _get_config(migrations_folder: str) -> Config:
 
     if migrations_folder is not None:
         config.set_main_option("script_location", migrations_folder)
+
+    config.set_main_option("sqlalchemy.url", pg_url)
 
     return config
 
@@ -35,52 +37,43 @@ def _get_script_directory(config: Config) -> ScriptDirectory:
     return script_directory
 
 
+def _get_current_revision(pg_dsn):
+    with with_context(pg_dsn) as context:
+        return context.get_current_revision()
+
+
 def _test_revision(
     settings: Settings,
     revision: Script,
     tmp_dsn: str,
 ):
-    with with_context(settings.postgres_dsn, settings.migrations_folder) as (
-        context,
-        script_directory,
-        config,
-    ):
-        with context.begin_transaction():
-            upgrade(config, revision.revision)
-            downgrade(config, "-1")
-            result = compare(settings.postgres_dsn, tmp_dsn)
-            logging.info(f"compare result.is_match = {result.is_match:} ")
-            if not result.is_match:
-                logging.info(f"Result not match. {result.errors}")
-    """ upgrade tmp databse """
-    with with_context(tmp_dsn, settings.migrations_folder) as (
-        context_tmp,
-        script_directory_tmp,
-        config_tmp,
-    ):
-        with context_tmp.begin_transaction():
-            upgrade(config_tmp, revision.revision)
+    config = _get_config(settings.postgres_dsn, settings.migrations_folder)
+    upgrade(config, revision.revision)
+    downgrade(config, "-1")
+    result = compare(settings.postgres_dsn, tmp_dsn)
+    logging.info(f"compare result.is_match = {result.is_match:} ")
+    if not result.is_match:
+        logging.info(f"Result not match. {result.errors}")
 
 
 def _get_revisions(settings: Settings):
     branch = settings.branch
+    branch_head = f"{branch}@head" if branch else "head"
 
-    with with_context(settings.postgres_dsn, settings.migrations_folder) as (
-        context,
-        script_directory,
-        config,
-    ):
-        from_revision = context.get_current_revision()
+    from_revision = _get_current_revision(settings.postgres_dsn)
 
-        branch_head = f"{branch}@head" if branch else "head"
+    script_directory = _get_script_directory(
+        _get_config(settings.postgres_dsn, settings.migrations_folder)
+    )
 
-        revisions = list(
-            filter(
-                lambda rev: from_revision != rev.revision,
-                script_directory.walk_revisions(from_revision, branch_head),
-            )
+    revisions = list(
+        filter(
+            lambda rev: from_revision != rev.revision,
+            script_directory.walk_revisions(from_revision, branch_head),
         )
-        revisions.reverse()
+    )
+    revisions.reverse()
+
     return revisions
 
 
@@ -97,30 +90,35 @@ def tmp_database(settings: Settings):
         logging.info(f"drop database:'{tmp_dsn}'")
 
 
+def prepare_postgres_template(tmp_dsn, migrations_folder, revision):
+    if revision is not None:
+        config = _get_config(tmp_dsn, migrations_folder)
+        upgrade(config, revision)
+
+
 @contextmanager
-def with_context(pg_dsn: str, migrations_folder: str):
+def with_context(pg_dsn: str):
     engine = create_engine(pg_dsn)
-
-    config = _get_config(migrations_folder)
-    script_directory = _get_script_directory(config)
-
     connection = engine.connect()
     context = MigrationContext.configure(connection)
 
     try:
-        yield context, script_directory, config
+        yield context
     finally:
         connection.close()
         engine.dispose()
-        logging.info(f"engine dosposed---")
 
 
 def _run_testing(settings: Settings):
     restore_db(settings.postgres_dsn, settings.dump_file)
 
     revisions = _get_revisions(settings)
+    tmp_rev = None
+
     with tmp_database(settings) as tmp_dsn:
         for revision in revisions:
+            prepare_postgres_template(tmp_dsn, settings.migrations_folder, tmp_rev)
+            tmp_rev = revision.revision
             _test_revision(settings, revision, tmp_dsn)
 
 
