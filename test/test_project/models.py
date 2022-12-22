@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, MetaData, String
+from sqlalchemy import CheckConstraint, Column, Integer, MetaData, Numeric, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 
 metadata = MetaData()
@@ -25,3 +25,10 @@ class Car(Base):
 
     id_ = Column("id", Integer, primary_key=True)
     model = Column(String(100), nullable=False)
+
+
+class Product(Base):
+    __tablename__ = "products"
+    product_no = Column(Integer, primary_key=True)
+    name = Column(Text, nullable=False)
+    price = Column(Numeric, CheckConstraint("price > (0)::numeric"), nullable=False)

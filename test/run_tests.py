@@ -113,8 +113,78 @@ def schema_drift_case():
     shutdown_postgres()
 
 
+def constraint_check():
+    startup_postgres()
+    run_testing(
+        settings.postgres_dsn,
+        branch="versions_constraint_check_invalid",
+        dump_file=settings.dump_file,
+    )
+    shutdown_postgres()
+
+
+def versions_check_nullable():
+    startup_postgres()
+    run_testing(
+        settings.postgres_dsn,
+        branch="versions_check_nullable",
+        dump_file=settings.dump_file,
+    )
+    shutdown_postgres()
+
+
+def versions_unique_constraints():
+    startup_postgres()
+    run_testing(
+        settings.postgres_dsn,
+        branch="versions_unique_constraints",
+        dump_file=settings.dump_file,
+    )
+    shutdown_postgres()
+
+
+def versions_primary_key():
+    startup_postgres()
+    run_testing(
+        settings.postgres_dsn,
+        branch="versions_primary_key",
+        dump_file=settings.dump_file,
+    )
+    shutdown_postgres()
+
+
+def versions_foreign_keys():
+    startup_postgres()
+    run_testing(
+        settings.postgres_dsn,
+        branch="versions_foreign_keys",
+        dump_file=settings.dump_file,
+    )
+    shutdown_postgres()
+
+
+def versions_unique_index():
+    startup_postgres()
+    run_testing(
+        settings.postgres_dsn,
+        branch="versions_unique_index",
+        dump_file=settings.dump_file,
+    )
+    shutdown_postgres()
+
+
 def run_test_cases():
-    cases = [valid_case, invalid_case, schema_drift_case]
+    cases = [
+        valid_case,
+        invalid_case,
+        schema_drift_case,
+        constraint_check,
+        versions_check_nullable,
+        versions_unique_constraints,
+        versions_primary_key,
+        versions_foreign_keys,
+        versions_unique_index,
+    ]
     for case in cases:
         try:
             logging.info(f"Running case {case.__name__}")
