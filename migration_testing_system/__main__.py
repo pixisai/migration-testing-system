@@ -109,11 +109,12 @@ def parse_args(prog: str) -> Settings:
 
     if namespace.postgres_uri and any(separated_uri_group_args):
         parser.error("Full URIs and Separated URIs are mutually exclusive")
-
-    if any((namespace.postgres_uri, *separated_uri_group_args)) and (
+    if not namespace.postgres_uri and not all(separated_uri_group_args):
+        parser.error("You must provide all fields of Separated URIs")
+    """if any((namespace.postgres_uri, *separated_uri_group_args)) and (
         not namespace.postgres_uri or not all(separated_uri_group_args)
     ):
-        parser.error("You must provide either Full URIs or Separated URIs")
+        parser.error("You must provide either Full URIs or Separated URIs")"""
 
     try:
         return Settings.parse_obj(
