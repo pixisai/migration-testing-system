@@ -22,7 +22,7 @@ def upgrade() -> None:
         sa.Column("model", sa.String(length=100), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.alter_column('user', 'first_name', nullable=True)
+    op.alter_column("user", "first_name", nullable=True)
     # ### end Alembic commands ###
 
 
