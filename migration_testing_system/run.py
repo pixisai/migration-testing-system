@@ -47,7 +47,7 @@ def _test_revision(
     result = compare(settings.POSTGRES_URI, tmp_dsn)
     logging.info(f"compare result.is_match = {result.is_match:} ")
     if not result.is_match:
-        logging.info(f"Result not match. {result.errors}")
+        raise Exception(f"Result not match. {result.errors}")
 
 
 def _get_revisions(settings: Settings):

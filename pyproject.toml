@@ -3,7 +3,7 @@ authors = ["Stanislav <slubovsky@cinimex.ru>"]
 description = ""
 name = "migration-testing-system"
 packages = [{include = "migration_testing_system"}]
-version = "0.2.0"
+version = "0.2.1"
 
 [tool.poetry.dependencies]
 SQLAlchemy = "^1.4.44"

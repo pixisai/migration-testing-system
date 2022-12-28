@@ -105,71 +105,92 @@ def invalid_case():
 
 def schema_drift_case():
     startup_postgres()
-    run_testing(
-        settings.postgres_dsn,
-        branch="versions_schema_drift",
-        dump_file=settings.dump_file,
-    )
+    try:
+        run_testing(
+            settings.postgres_dsn,
+            branch="versions_schema_drift",
+            dump_file=settings.dump_file,
+        )
+    except Exception as e:
+        print(e)
     shutdown_postgres()
 
 
 def constraint_check():
     startup_postgres()
-    run_testing(
-        settings.postgres_dsn,
-        branch="versions_constraint_check_invalid",
-        dump_file=settings.dump_file,
-    )
+    try:
+        run_testing(
+            settings.postgres_dsn,
+            branch="versions_constraint_check_invalid",
+            dump_file=settings.dump_file,
+        )
+    except Exception as e:
+        print(e)
     shutdown_postgres()
 
 
 def versions_check_nullable():
     startup_postgres()
-    run_testing(
-        settings.postgres_dsn,
-        branch="versions_check_nullable",
-        dump_file=settings.dump_file,
-    )
+    try:
+        run_testing(
+            settings.postgres_dsn,
+            branch="versions_check_nullable",
+            dump_file=settings.dump_file,
+        )
+    except Exception as e:
+        print(e)
     shutdown_postgres()
 
 
 def versions_unique_constraints():
     startup_postgres()
-    run_testing(
-        settings.postgres_dsn,
-        branch="versions_unique_constraints",
-        dump_file=settings.dump_file,
-    )
+    try:
+        run_testing(
+            settings.postgres_dsn,
+            branch="versions_unique_constraints",
+            dump_file=settings.dump_file,
+        )
+    except Exception as e:
+        print(e)
     shutdown_postgres()
 
 
 def versions_primary_key():
     startup_postgres()
-    run_testing(
-        settings.postgres_dsn,
-        branch="versions_primary_key",
-        dump_file=settings.dump_file,
-    )
+    try:
+        run_testing(
+            settings.postgres_dsn,
+            branch="versions_primary_key",
+            dump_file=settings.dump_file,
+        )
+    except Exception as e:
+        print(e)
     shutdown_postgres()
 
 
 def versions_foreign_keys():
     startup_postgres()
-    run_testing(
-        settings.postgres_dsn,
-        branch="versions_foreign_keys",
-        dump_file=settings.dump_file,
-    )
+    try:
+        run_testing(
+            settings.postgres_dsn,
+            branch="versions_foreign_keys",
+            dump_file=settings.dump_file,
+        )
+    except Exception as e:
+        print(e)
     shutdown_postgres()
 
 
 def versions_unique_index():
     startup_postgres()
-    run_testing(
-        settings.postgres_dsn,
-        branch="versions_unique_index",
-        dump_file=settings.dump_file,
-    )
+    try:
+        run_testing(
+            settings.postgres_dsn,
+            branch="versions_unique_index",
+            dump_file=settings.dump_file,
+        )
+    except Exception as e:
+        print(e)
     shutdown_postgres()
 
 
