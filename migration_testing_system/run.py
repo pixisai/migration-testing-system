@@ -3,11 +3,12 @@ import os
 import uuid
 from contextlib import contextmanager
 
-from alembic.command import downgrade, upgrade
+from alembic import context
 from alembic.config import Config
+from alembic.environment import EnvironmentContext
 from alembic.migration import MigrationContext
 from alembic.script import Script, ScriptDirectory
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, engine_from_config, pool
 from sqlalchemy_utils import create_database, drop_database
 from sqlalchemydiff import compare
 
@@ -30,12 +31,6 @@ def _get_config(pg_url: str, migrations_folder: str) -> Config:
     return config
 
 
-def _get_script_directory(config: Config) -> ScriptDirectory:
-    script_directory = ScriptDirectory.from_config(config)
-
-    return script_directory
-
-
 def _get_current_revision(pg_dsn):
     with with_context(pg_dsn) as context:
         return context.get_current_revision()
@@ -47,8 +42,8 @@ def _test_revision(
     tmp_dsn: str,
 ):
     config = _get_config(settings.POSTGRES_URI, settings.MIGRATIONS_FOLDER)
-    upgrade(config, revision.revision)
-    downgrade(config, "-1")
+    _upgrade(config, revision.revision)
+    _downgrade(config, "-1")
     result = compare(settings.POSTGRES_URI, tmp_dsn)
     logging.info(f"compare result.is_match = {result.is_match:} ")
     if not result.is_match:
@@ -61,14 +56,13 @@ def _get_revisions(settings: Settings):
 
     from_revision = _get_current_revision(settings.POSTGRES_URI)
 
-    script_directory = _get_script_directory(
-        _get_config(settings.POSTGRES_URI, settings.MIGRATIONS_FOLDER)
-    )
+    config = _get_config(settings.POSTGRES_URI, settings.MIGRATIONS_FOLDER)
+    script = ScriptDirectory.from_config(config)
 
     revisions = list(
         filter(
             lambda rev: from_revision != rev.revision,
-            script_directory.walk_revisions(from_revision, branch_head),
+            script.walk_revisions(from_revision, branch_head),
         )
     )
     revisions.reverse()
@@ -92,7 +86,60 @@ def tmp_database(settings: Settings):
 def prepare_postgres_template(tmp_dsn, migrations_folder, revision):
     if revision is not None:
         config = _get_config(tmp_dsn, migrations_folder)
-        upgrade(config, revision)
+        _upgrade(config, revision)
+
+
+def _upgrade(
+    config: Config,
+    revision: str,
+) -> None:
+    script = ScriptDirectory.from_config(config)
+
+    def upgrade(rev, context):
+        return script._upgrade_revs(revision, rev)
+
+    with EnvironmentContext(
+        config,
+        script,
+        fn=upgrade,
+        destination_rev=revision,
+    ):
+        run_migrations_online(config)
+
+
+def _downgrade(
+    config: Config,
+    revision: str,
+) -> None:
+    script = ScriptDirectory.from_config(config)
+
+    def downgrade(rev, context):
+        return script._downgrade_revs(revision, rev)
+
+    with EnvironmentContext(
+        config,
+        script,
+        fn=downgrade,
+        destination_rev=revision,
+    ):
+        run_migrations_online(config)
+
+
+def run_migrations_online(config) -> None:
+    connectable = engine_from_config(
+        config.get_section(config.config_ini_section),
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
+
+    with connectable.connect() as connection:
+        context.configure(
+            connection=connection,
+            include_schemas=True,
+        )
+
+        with context.begin_transaction():
+            context.run_migrations()
 
 
 @contextmanager
